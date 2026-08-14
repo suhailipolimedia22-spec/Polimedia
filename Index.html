@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Game Tangkap Bintang</title>
+  <style>
+    body {
+      margin: 0;
+      background: #111827;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      font-family: Arial, sans-serif;
+      color: white;
+      overflow: hidden;
+    }
+    h1 { margin: 5px; font-size: 24px; }
+    #score-board { margin-bottom: 10px; font-size: 18px; }
+    canvas {
+      background: #1f2937;
+      border: 2px solid #38bdf8;
+      border-radius: 8px;
+      box-shadow: 0 0 20px rgba(56, 189, 248, 0.3);
+    }
+  </style>
+</head>
+<body>
+
+  <h1>⭐ Tangkap Bintang ⭐</h1>
+  <div id="score-board">Skor: <span id="score">0</span> | Nyawa: <span id="lives">3</span></div>
+  <canvas id="gameCanvas" width="400" height="500"></canvas>
+
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+    let score = 0;
+    let lives = 3;
+    let gameOver = false;
+
+    // Player (Keranjang)
+    const player = {
+      x: 175,
+      y: 450,
+      width: 60,
+      height: 15,
+      speed: 7,
+      dx: 0
+    };
+
+    // Bintang (Target)
+    const star = {
+      x: Math.random() * 370,
+      y: 0,
+      size: 15,
+      speed: 3
+    };
+
+    // Kontrol Keyboard
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowLeft" || e.key === "a") player.dx = -player.speed;
+      if (e.key === "ArrowRight" || e.key === "d") player.dx = player.speed;
+    });
+
+    document.addEventListener("keyup", (e) => {
+      if (["ArrowLeft", "ArrowRight", "a", "d"].includes(e.key)) player.dx = 0;
+    });
+
+    // Kontrol Sentuh / Mouse
+    canvas.addEventListener("mousemove", (e) => {
+      const rect = canvas.getBoundingClientRect();
+      player.x = e.clientX - rect.left - player.width / 2;
+    });
+
+    function resetStar() {
+      star.y = 0;
+      star.x = Math.random() * (canvas.width - star.size);
+      star.speed = 3 + Math.floor(score / 5); // Kecepatan meningkat seiring skor
+    }
+
+    function update() {
+      if (gameOver) return;
+
+      // Gerak pemain
+      player.x += player.dx;
+      if (player.x < 0) player.x = 0;
+      if (player.x + player.width > canvas.width) player.x = canvas.width - player.width;
+
+      // Gerak bintang
+      star.y += star.speed;
+
+      // Cek tabrakan dengan pemain
+      if (
+        star.y + star.size >= player.y &&
+        star.x + star.size >= player.x &&
+        star.x <= player.x + player.width
+      ) {
+        score++;
+        document.getElementById("score").innerText = score;
+        resetStar();
+      }
+
+      // Jika bintang jatuh ke bawah (meleset)
+      if (star.y > canvas.height) {
+        lives--;
+        document.getElementById("lives").innerText = lives;
+        if (lives <= 0) {
+          gameOver = true;
+        } else {
+          resetStar();
+        }
+      }
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Gambar pemain
+      ctx.fillStyle = "#38bdf8";
+      ctx.fillRect(player.x, player.y, player.width, player.height);
+
+      // Gambar bintang
+      ctx.fillStyle = "#facc15";
+      ctx.beginPath();
+      ctx.arc(star.x + star.size / 2, star.y + star.size / 2, star.size / 2, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Game Over Screen
+      if (gameOver) {
+        ctx.fillStyle = "rgba(0, 0, 0, 0.75)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.fillStyle = "#ef4444";
+        ctx.font = "bold 28px Arial";
+        ctx.textAlign = "center";
+        ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2 - 10);
+
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "16px Arial";
+        ctx.fillText("Refresh halaman (F5) untuk main lagi", canvas.width / 2, canvas.height / 2 + 25);
+      }
+    }
+
+    function loop() {
+      update();
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    loop();
+  </script>
+</body>
+</html>
